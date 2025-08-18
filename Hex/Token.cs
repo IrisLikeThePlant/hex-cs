@@ -3,11 +3,11 @@
 public class Token
 {
     private readonly TokenType _type;
-    private readonly String _lexeme;
-    private readonly Object _literal;
+    private readonly string _lexeme;
+    private readonly Object? _literal;
     private readonly int _line;
 
-    Token(TokenType type, String lexeme, Object literal, int line)
+    internal Token(TokenType type, string lexeme, Object literal, int line)
     {
         this._type = type;
         this._lexeme = lexeme;

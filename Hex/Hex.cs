@@ -1,6 +1,4 @@
-﻿using System.IO;
-using System.Runtime.InteropServices;
-using System.Text;
+﻿using System.Text;
 
 namespace Hex;
 
@@ -8,7 +6,7 @@ public class Hex
 {
     internal static bool HadError = false;
     
-    public static void Main(String[] args)
+    public static void Main(string[] args)
     {
         switch (args.Length)
         {
@@ -45,10 +43,10 @@ public class Hex
         }
     }
 
-    private static void Run(String source)
+    private static void Run(string source)
     {
-        Lexer lexer = new Lexer();
-        List<Token> tokens = lexer.scanTokens();
+        Lexer lexer = new Lexer(source);
+        List<Token> tokens = lexer.ScanTokens();
         
         foreach (Token token in tokens)
         {
@@ -56,14 +54,14 @@ public class Hex
         }
     }
 
-    internal static void Error(int line, String message)
+    internal static void Error(int line, string message)
     {
         Report(line, "", message);
     }
 
-    private static void Report(int line, String where, String message)
+    private static void Report(int line, string where, string message)
     {
         Console.WriteLine($"[line {line}] Error {where}: {message}");
-        hadError = true;
+        HadError = true;
     }
 }
