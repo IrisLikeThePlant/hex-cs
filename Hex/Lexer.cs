@@ -58,6 +58,7 @@ public class Lexer
         char c = Consume();
         switch (c)
         {
+            case '\uFEFF': break; // UTF-8 BOM marker
             case '(': AddToken(TokenType.LeftParen); break;
             case ')': AddToken(TokenType.RightParen); break;
             case '{': AddToken(TokenType.LeftBrace); break;
@@ -99,7 +100,7 @@ public class Lexer
             default:
                 if (IsDigit(c)) Number(); 
                 else if (IsAlpha(c)) Identifier();
-                else Hex.Error(_line, "Unexpected character.");
+                else Hex.Error(_line, "Unexpected character: " + c);
                 break;
         }
     }
