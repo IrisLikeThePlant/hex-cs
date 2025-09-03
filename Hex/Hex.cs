@@ -47,16 +47,25 @@ public class Hex
     {
         Lexer lexer = new Lexer(source);
         List<Token> tokens = lexer.ScanTokens();
+
+        Parser parser = new Parser(tokens);
+        Expr? expression = parser.Parse();
         
-        foreach (Token token in tokens)
-        {
-            Console.WriteLine(token);
-        }
+        if (HadError || expression == null) return;
+        Console.WriteLine(new AstPrinter().Print(expression));
     }
 
     internal static void Error(int line, string message)
     {
         Report(line, "", message);
+    }
+
+    internal static void Error(Token token, string message)
+    {
+        if (token.Type == TokenType.Eof)
+            Report(token.Line, "at end", message);
+        else
+            Report(token.Line, "at '" + token.Lexeme + "'", message);
     }
 
     private static void Report(int line, string where, string message)

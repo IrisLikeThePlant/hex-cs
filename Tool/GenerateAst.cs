@@ -52,7 +52,7 @@ public class GenerateAst
     {
         writer.WriteLine("    public class " + className + " : " + baseName);
         writer.WriteLine("    {");
-        writer.WriteLine("        internal " + className + "(" + fieldList + ")");
+        writer.WriteLine("        internal " + className + "(" + fieldList + NullableIfNullable(fieldList) +")");
         writer.WriteLine("        {");
 
         string[] fields = fieldList.Split(", ");
