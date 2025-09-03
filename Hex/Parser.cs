@@ -26,9 +26,42 @@ internal class Parser
 
     private Expr Expression()
     {
-        return Equality();
+        return Comma();
     }
 
+    // expression -> comma ;
+    // comma -> equality ( "," equality )* ;
+    private Expr Comma()
+    {
+        Expr expr = Ternary();
+
+        while (Match(TokenType.Comma))
+        {
+            Token operatorToken = Previous();
+            Expr rhs = Ternary();
+            expr = new Expr.Binary(expr, operatorToken, rhs);
+        }
+
+        return expr;
+    }
+
+    // comma -> ternary ( "," ternary )* ;
+    // ternary  -> equality ( "?" expression ":" ternary )* ;
+    private Expr Ternary()
+    {
+        Expr expr = Equality();
+
+        if (Match(TokenType.Question))
+        {
+            Expr trueBranch = Expression();
+            ConsumeIfMatch(TokenType.Colon, "Expected ':' after expression");
+            Expr falseBranch = Ternary();
+            expr = new Expr.Ternary(expr, trueBranch, falseBranch);
+        }
+
+        return expr;
+    }
+    
     private Expr Equality()
     {
         Expr expr = Comparison();

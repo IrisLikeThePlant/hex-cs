@@ -5,6 +5,8 @@ internal enum TokenType
     LeftParen, RightParen, LeftBrace, RightBrace,
     Comma, Dot, Minus, Plus, Semicolon, Slash, Star,
     
+    Colon, Question,
+    
     Bang, BangEqual,
     Equal, EqualEqual,
     Greater, GreaterEqual,

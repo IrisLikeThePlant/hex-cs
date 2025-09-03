@@ -13,6 +13,7 @@ public class GenerateAst
 
         string outputDir = args[0];
         DefineAst(outputDir, "Expr", new List<string>{
+            "Ternary  : Expr condition, Expr trueBranch, Expr falseBranch",
             "Binary   : Expr lhs, Token operatorToken, Expr rhs",
             "Grouping : Expr expression",
             "Literal  : Object value",
