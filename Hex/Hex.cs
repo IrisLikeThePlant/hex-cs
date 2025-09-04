@@ -4,7 +4,10 @@ namespace Hex;
 
 public class Hex
 {
-    internal static bool HadError = false;
+    private static readonly Interpreter Interpreter = new Interpreter();
+    
+    private static bool _hadError = false;
+    private static bool _hadRuntimeError = false;
     
     public static void Main(string[] args)
     {
@@ -28,7 +31,8 @@ public class Hex
         string content = Encoding.Default.GetString(bytes);
         Run(content);
         
-        if (HadError) Environment.Exit(65);
+        if (_hadError) Environment.Exit(65);
+        if (_hadRuntimeError) Environment.Exit(70);
     }
 
     private static void RunPrompt()
@@ -39,7 +43,8 @@ public class Hex
             String? line = Console.ReadLine();
             if (line == null) break;
             Run(line);
-            HadError = false;
+            _hadError = false;
+            _hadRuntimeError = false;
         }
     }
 
@@ -51,8 +56,8 @@ public class Hex
         Parser parser = new Parser(tokens);
         Expr? expression = parser.Parse();
         
-        if (HadError || expression == null) return;
-        Console.WriteLine(new AstPrinter().Print(expression));
+        if (_hadError) return;
+        Interpreter.Interpret(expression);
     }
 
     internal static void Error(int line, string message)
@@ -68,9 +73,15 @@ public class Hex
             Report(token.Line, "at '" + token.Lexeme + "'", message);
     }
 
+    internal static void RuntimeError(RuntimeError error)
+    {
+        Console.WriteLine(error.Message + "\n[line " + error.Token.Line + "]");
+        _hadRuntimeError = true;
+    }
+
     private static void Report(int line, string where, string message)
     {
         Console.WriteLine($"[line {line}] Error {where}: {message}");
-        HadError = true;
+        _hadError = true;
     }
 }
