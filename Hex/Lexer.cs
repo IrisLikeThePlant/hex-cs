@@ -154,7 +154,7 @@ public class Lexer
         }
 
         Consume();
-        string value = _source.Substring(_start, _current - _start);
+        string value = _source.Substring(_start + 1, _current - _start - 2);
         AddToken(TokenType.String, value);
     }
 

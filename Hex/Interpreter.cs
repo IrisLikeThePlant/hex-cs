@@ -52,8 +52,12 @@ internal class Interpreter : Expr.IVisitor<object>
             case TokenType.Plus:
                 if (left is double dLeft && right is double dRight)
                     return dLeft + dRight;
-                if (left is string sLeft && right is string sRight)
-                    return sLeft + sRight;
+                if (left is string sL && right is string sR)
+                    return sL + sR;
+                if (left is string sLeft && right is not string)
+                    return sLeft + right.ToString();
+                if (left is not string && right is string sRight)
+                    return left.ToString() + sRight;
                 throw new RuntimeError(expr.OperatorToken, "Operands must be two numbers or two strings.");
             case TokenType.Slash:
                 CheckNumberOperands(expr.OperatorToken, left, right);
