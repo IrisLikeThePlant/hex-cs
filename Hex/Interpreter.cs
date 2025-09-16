@@ -1,20 +1,64 @@
 ﻿namespace Hex;
 
-internal class Interpreter : Expr.IVisitor<object>
+internal class Interpreter : Expr.IVisitor<object>, Stmt.IVisitor<object>
 {
-    internal void Interpret(Expr expression)
+    private Environment _environment = new Environment();
+    
+    internal void Interpret(List<Stmt> statements)
     {
         try
         {
-            object value = Evaluate(expression);
-            Console.WriteLine(Stringify(value));
+            foreach (var statement in statements)
+            {
+                Execute(statement);
+            }
         }
         catch (RuntimeError e)
         {
             Hex.RuntimeError(e);
         }
     }
-    
+
+    public object? VisitStmtBlock(Stmt.Block stmt)
+    {
+        ExecuteBlock(stmt.Statements, new Environment(_environment));
+        return null;
+    }
+
+    public object? VisitStmtExpression(Stmt.Expression stmt)
+    {
+        Evaluate(stmt.Expr);
+        return null;
+    }
+
+    public object? VisitStmtPrint(Stmt.Print stmt)
+    {
+        object value = Evaluate(stmt.Expr);
+        Console.WriteLine(Stringify(value));
+        return null;
+    }
+
+    public object? VisitStmtVar(Stmt.Var stmt)
+    {
+        object? value = null;
+        if (stmt.Initializer != null)
+            value = Evaluate(stmt.Initializer);
+        _environment.Define(stmt.Name.Lexeme, value);
+        return null;
+    }
+
+    public object? VisitExprVariable(Expr.Variable expr)
+    {
+        return _environment.Get(expr.Name);
+    }
+
+    public object? VisitExprAssign(Expr.Assign expr)
+    {
+        object value = Evaluate(expr.Value);
+        _environment.Assign(expr.Name, value);
+        return value;
+    }
+
     public object VisitExprTernary(Expr.Ternary expr)
     {
         object condition = Evaluate(expr.Condition);
@@ -61,6 +105,8 @@ internal class Interpreter : Expr.IVisitor<object>
                 throw new RuntimeError(expr.OperatorToken, "Operands must be two numbers or two strings.");
             case TokenType.Slash:
                 CheckNumberOperands(expr.OperatorToken, left, right);
+                if ((double)right == 0)
+                    throw new RuntimeError(expr.OperatorToken, "You can't divide by zero, dummy.");
                 return (double)left / (double)right;
             case TokenType.Star:
                 CheckNumberOperands(expr.OperatorToken, left, right);
@@ -99,6 +145,29 @@ internal class Interpreter : Expr.IVisitor<object>
     private object Evaluate(Expr expr)
     {
         return expr.Accept(this);
+    }
+    
+    private void Execute(Stmt stmt)
+    {
+        stmt.Accept(this);
+    }
+
+    private void ExecuteBlock(List<Stmt> statements, Environment environment)
+    {
+        Environment previous = this._environment;
+        try
+        {
+            this._environment = environment;
+
+            foreach (var statement in statements)
+            {
+                Execute(statement);
+            }
+        }
+        finally
+        {
+            this._environment = previous;
+        }
     }
 
     private bool IsTruthy(object? obj)

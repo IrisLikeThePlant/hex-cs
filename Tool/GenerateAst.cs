@@ -12,13 +12,21 @@ public class GenerateAst
         }
 
         string outputDir = args[0];
-        DefineAst(outputDir, "Expr", new List<string>{
+        DefineAst(outputDir, "Expr", [
+            "Assign   : Token name, Expr value",
             "Ternary  : Expr condition, Expr trueBranch, Expr falseBranch",
             "Binary   : Expr lhs, Token operatorToken, Expr rhs",
             "Grouping : Expr expression",
             "Literal  : Object value",
-            "Unary    : Token operatorToken, Expr rhs"
-        });
+            "Unary    : Token operatorToken, Expr rhs",
+            "Variable : Token name"
+        ]);
+        DefineAst(outputDir, "Stmt", [
+            "Block      : List<Stmt> statements",
+            "Expression : Expr expr",
+            "Print      : Expr expr",
+            "Var        : Token name, Expr initializer"
+        ]);
     }
 
     private static void DefineAst(string outputDir, string baseName, List<string> types)
@@ -88,7 +96,7 @@ public class GenerateAst
         foreach (var type in types)
         {
             string typeName = type.Split(":")[0].Trim();
-            writer.WriteLine("        T Visit" + baseName + typeName + "(" + typeName + " " + baseName.ToLower() + ");");
+            writer.WriteLine("        T? Visit" + baseName + typeName + "(" + typeName + " " + baseName.ToLower() + ");");
         }
         writer.WriteLine("    }");
     }

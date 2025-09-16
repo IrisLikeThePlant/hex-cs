@@ -1,1 +1,5 @@
-﻿5 + 3
+﻿rune a = 1;
+{
+    rune a = a + 2;
+    summon a;
+}

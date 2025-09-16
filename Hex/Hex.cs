@@ -31,8 +31,8 @@ public class Hex
         string content = Encoding.Default.GetString(bytes);
         Run(content);
         
-        if (_hadError) Environment.Exit(65);
-        if (_hadRuntimeError) Environment.Exit(70);
+        if (_hadError) System.Environment.Exit(65);
+        if (_hadRuntimeError) System.Environment.Exit(70);
     }
 
     private static void RunPrompt()
@@ -54,10 +54,11 @@ public class Hex
         List<Token> tokens = lexer.ScanTokens();
 
         Parser parser = new Parser(tokens);
-        Expr? expression = parser.Parse();
-        
+        List<Stmt>? statements = parser.Parse();
+
+        if (statements == null) return;
         if (_hadError) return;
-        Interpreter.Interpret(expression);
+        Interpreter.Interpret(statements);
     }
 
     internal static void Error(int line, string message)
