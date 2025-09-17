@@ -18,14 +18,17 @@ public class GenerateAst
             "Binary   : Expr lhs, Token operatorToken, Expr rhs",
             "Grouping : Expr expression",
             "Literal  : Object value",
+            "Logical  : Expr lhs, Token operatorToken, Expr rhs",
             "Unary    : Token operatorToken, Expr rhs",
             "Variable : Token name"
         ]);
         DefineAst(outputDir, "Stmt", [
             "Block      : List<Stmt> statements",
             "Expression : Expr expr",
+            "If         : Expr condition, Stmt thenBranch, Stmt elseBranch",
             "Print      : Expr expr",
-            "Var        : Token name, Expr initializer"
+            "Var        : Token name, Expr initializer",
+            "While      : Expr condition, Stmt body"
         ]);
     }
 

@@ -47,6 +47,22 @@ internal class Interpreter : Expr.IVisitor<object>, Stmt.IVisitor<object>
         return null;
     }
 
+    public object? VisitStmtIf(Stmt.If stmt)
+    {
+        if (IsTruthy(Evaluate(stmt.Condition)))
+            Execute(stmt.ThenBranch);
+        else if (stmt.ElseBranch != null)
+            Execute(stmt.ElseBranch);
+        return null;
+    }
+
+    public object? VisitStmtWhile(Stmt.While stmt)
+    {
+        while (IsTruthy(Evaluate(stmt.Condition)))
+            Execute(stmt.Body);
+        return null;
+    }
+
     public object? VisitExprVariable(Expr.Variable expr)
     {
         return _environment.Get(expr.Name);
@@ -124,6 +140,24 @@ internal class Interpreter : Expr.IVisitor<object>, Stmt.IVisitor<object>
     public object VisitExprLiteral(Expr.Literal expr)
     {
         return expr.Value;
+    }
+
+    public object? VisitExprLogical(Expr.Logical expr)
+    {
+        object left = Evaluate(expr.Lhs);
+
+        if (expr.OperatorToken.Type == TokenType.Or)
+        {
+            if (IsTruthy(left))
+                return left;
+        }
+        else
+        {
+            if (!IsTruthy(left))
+                return left;
+        }
+
+        return Evaluate(expr.Rhs);
     }
 
     public object VisitExprUnary(Expr.Unary expr)

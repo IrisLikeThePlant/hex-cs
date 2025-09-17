@@ -10,6 +10,7 @@ public abstract class Expr
         T? VisitExprBinary(Binary expr);
         T? VisitExprGrouping(Grouping expr);
         T? VisitExprLiteral(Literal expr);
+        T? VisitExprLogical(Logical expr);
         T? VisitExprUnary(Unary expr);
         T? VisitExprVariable(Variable expr);
     }
@@ -99,6 +100,25 @@ public abstract class Expr
         }
 
         internal readonly Object? Value;
+    }
+
+    public class Logical : Expr
+    {
+        internal Logical(Expr lhs, Token operatorToken, Expr rhs)
+        {
+            this.Lhs = lhs;
+            this.OperatorToken = operatorToken;
+            this.Rhs = rhs;
+        }
+
+        internal override T Accept<T>(IVisitor<T> visitor)
+        {
+            return visitor.VisitExprLogical(this);
+        }
+
+        internal readonly Expr Lhs;
+        internal readonly Token OperatorToken;
+        internal readonly Expr Rhs;
     }
 
     public class Unary : Expr

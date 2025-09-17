@@ -1,5 +1,9 @@
-﻿rune a = 1;
+﻿rune a = 0;
+rune temp;
+
+for (rune b = 1; a < 10000; b = temp + b)
 {
-    rune a = a + 2;
     summon a;
+    temp = a;
+    a = b;
 }
