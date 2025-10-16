@@ -16,6 +16,7 @@ public class GenerateAst
             "Assign   : Token name, Expr value",
             "Ternary  : Expr condition, Expr trueBranch, Expr falseBranch",
             "Binary   : Expr lhs, Token operatorToken, Expr rhs",
+            "Call     : Expr callee, Token paren, List<Expr> arguments",
             "Grouping : Expr expression",
             "Literal  : Object value",
             "Logical  : Expr lhs, Token operatorToken, Expr rhs",
@@ -25,8 +26,10 @@ public class GenerateAst
         DefineAst(outputDir, "Stmt", [
             "Block      : List<Stmt> statements",
             "Expression : Expr expr",
+            "Function   : Token name, List<Token> parameters, List<Stmt> body",
             "If         : Expr condition, Stmt thenBranch, Stmt elseBranch",
             "Print      : Expr expr",
+            "Return     : Token keyword, Expr value",
             "Var        : Token name, Expr initializer",
             "While      : Expr condition, Stmt body"
         ]);

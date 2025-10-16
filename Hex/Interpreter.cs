@@ -2,7 +2,14 @@
 
 internal class Interpreter : Expr.IVisitor<object>, Stmt.IVisitor<object>
 {
-    private Environment _environment = new Environment();
+    internal readonly Environment Globals = new Environment();
+    private Environment _environment;
+
+    internal Interpreter()
+    {
+        _environment = Globals;
+        Globals.Define("Clock", new ClockFunction());
+    }
     
     internal void Interpret(List<Stmt> statements)
     {
@@ -38,12 +45,29 @@ internal class Interpreter : Expr.IVisitor<object>, Stmt.IVisitor<object>
         return null;
     }
 
+    public object? VisitStmtReturn(Stmt.Return stmt)
+    {
+        object? value = null;
+
+        if (stmt.Value != null)
+            value = Evaluate(stmt.Value);
+
+        throw new Return(value);
+    }
+
     public object? VisitStmtVar(Stmt.Var stmt)
     {
         object? value = null;
         if (stmt.Initializer != null)
             value = Evaluate(stmt.Initializer);
         _environment.Define(stmt.Name.Lexeme, value);
+        return null;
+    }
+    
+    public object? VisitStmtFunction(Stmt.Function stmt)
+    {
+        HexFunction function = new HexFunction(stmt, _environment);
+        _environment.Define(stmt.Name.Lexeme, function);
         return null;
     }
 
@@ -61,6 +85,28 @@ internal class Interpreter : Expr.IVisitor<object>, Stmt.IVisitor<object>
         while (IsTruthy(Evaluate(stmt.Condition)))
             Execute(stmt.Body);
         return null;
+    }
+
+    public object? VisitExprCall(Expr.Call expr)
+    {
+        object callee = Evaluate(expr.Callee);
+
+        List<object?> arguments = [];
+        foreach (var argument in expr.Arguments)
+        {
+            arguments.Add(Evaluate(argument));
+        }
+
+        if (callee is not ICallable)
+            throw new RuntimeError(expr.Paren, "Can only call functions and classes.");
+        
+        ICallable function = (ICallable)callee;
+
+        if (arguments.Count != function.Arity())
+            throw new RuntimeError(expr.Paren,
+                "Expected " + function.Arity() + " arguments but got " + arguments.Count + ".");
+        
+        return function.Call(this, arguments);
     }
 
     public object? VisitExprVariable(Expr.Variable expr)
@@ -186,7 +232,7 @@ internal class Interpreter : Expr.IVisitor<object>, Stmt.IVisitor<object>
         stmt.Accept(this);
     }
 
-    private void ExecuteBlock(List<Stmt> statements, Environment environment)
+    internal void ExecuteBlock(List<Stmt> statements, Environment environment)
     {
         Environment previous = this._environment;
         try
