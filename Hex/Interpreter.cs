@@ -4,6 +4,7 @@ internal class Interpreter : Expr.IVisitor<object>, Stmt.IVisitor<object>
 {
     internal readonly Environment Globals = new Environment();
     private Environment _environment;
+    private readonly Dictionary<Expr, int> _locals = new();
 
     internal Interpreter()
     {
@@ -111,13 +112,26 @@ internal class Interpreter : Expr.IVisitor<object>, Stmt.IVisitor<object>
 
     public object? VisitExprVariable(Expr.Variable expr)
     {
-        return _environment.Get(expr.Name);
+        return LookUpVariable(expr.Name, expr);
+    }
+
+    private object? LookUpVariable(Token name, Expr expr)
+    {
+        if (_locals.TryGetValue(expr, out int distance))
+            return _environment.GetAt(distance, name.Lexeme);
+        else
+            return Globals.Get(name);
     }
 
     public object? VisitExprAssign(Expr.Assign expr)
     {
         object value = Evaluate(expr.Value);
-        _environment.Assign(expr.Name, value);
+        
+        if (_locals.TryGetValue(expr, out int distance))
+            _environment.AssignAt(distance, expr.Name, value);
+        else
+            Globals.Assign(expr.Name, value);
+        
         return value;
     }
 
@@ -289,5 +303,10 @@ internal class Interpreter : Expr.IVisitor<object>, Stmt.IVisitor<object>
         }
 
         return obj.ToString();
+    }
+
+    internal void Resolve(Expr expr, int depth)
+    {
+        _locals[expr] = depth;
     }
 }

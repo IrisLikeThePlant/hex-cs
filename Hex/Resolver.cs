@@ -1,0 +1,223 @@
+﻿namespace Hex;
+
+internal class Resolver : Expr.IVisitor<Object?>, Stmt.IVisitor<Object?>
+{
+    private readonly Interpreter _interpreter;
+    private readonly Stack<Dictionary<string, bool>> _scopes = new();
+    private FunctionType _currentFunction = FunctionType.None;
+
+    internal Resolver(Interpreter interpreter)
+    {
+        this._interpreter = interpreter;
+    }
+
+    public object? VisitExprAssign(Expr.Assign expr)
+    {
+        Resolve(expr.Value);
+        ResolveLocal(expr, expr.Name);
+        return null;
+    }
+
+    public object? VisitExprTernary(Expr.Ternary expr)
+    {
+        Resolve(expr.Condition);
+        Resolve(expr.TrueBranch);
+        Resolve(expr.FalseBranch);
+        return null;
+    }
+
+    public object? VisitExprBinary(Expr.Binary expr)
+    {
+        Resolve(expr.Lhs);
+        Resolve(expr.Rhs);
+        return null;
+    }
+
+    public object? VisitExprCall(Expr.Call expr)
+    {
+        Resolve(expr.Callee);
+        
+        foreach(Expr argument in expr.Arguments)
+            Resolve(argument);
+
+        return null;
+    }
+
+    public object? VisitExprGrouping(Expr.Grouping expr)
+    {
+        Resolve(expr.Expression);
+        return null;
+    }
+
+    public object? VisitExprLiteral(Expr.Literal expr)
+    {
+        return null;
+    }
+
+    public object? VisitExprLogical(Expr.Logical expr)
+    {
+        Resolve(expr.Lhs);
+        Resolve(expr.Rhs);
+        return null;
+    }
+
+    public object? VisitExprUnary(Expr.Unary expr)
+    {
+        Resolve(expr.Rhs);
+        return null;
+    }
+
+    public object? VisitExprVariable(Expr.Variable expr)
+    {
+        if (_scopes.Count != 0 && _scopes.Peek().TryGetValue(expr.Name.Lexeme, out bool canInitialize) && canInitialize == false)
+            Hex.Error(expr.Name, "Can't read local variable in its own initializer.");
+
+        ResolveLocal(expr, expr.Name);
+        return null;
+    }
+
+    private void ResolveLocal(Expr expr, Token name)
+    {
+        var scopesArray = _scopes.ToArray();
+        for (int i = 0; i < scopesArray.Length; i++)
+        {
+            if (scopesArray[i].ContainsKey(name.Lexeme))
+            {
+                _interpreter.Resolve(expr, i);
+                return;
+            }
+        }
+    }
+    
+    public object? VisitStmtBlock(Stmt.Block stmt)
+    {
+        BeginScope();
+        Resolve(stmt.Statements);
+        EndScope();
+        return null;
+    }
+
+    public object? VisitStmtExpression(Stmt.Expression stmt)
+    {
+        Resolve(stmt.Expr);
+        return null;
+    }
+
+    public object? VisitStmtFunction(Stmt.Function stmt)
+    {
+        Declare(stmt.Name);
+        Define(stmt.Name);
+        ResolveFunction(stmt, FunctionType.Function);
+        return null;
+    }
+
+    private void ResolveFunction(Stmt.Function func, FunctionType type)
+    {
+        FunctionType enclosingFunction = _currentFunction;
+        _currentFunction = type;
+        
+        BeginScope();
+        foreach (var parameter in func.Parameters)
+        {
+            Declare(parameter);
+            Define(parameter);
+        }
+        Resolve(func.Body);
+        EndScope();
+
+        _currentFunction = enclosingFunction;
+    }
+
+    public object? VisitStmtIf(Stmt.If stmt)
+    {
+        Resolve(stmt.Condition);
+        Resolve(stmt.ThenBranch);
+        if (stmt.ElseBranch != null)
+            Resolve(stmt.ElseBranch);
+        return null;
+    }
+
+    public object? VisitStmtPrint(Stmt.Print stmt)
+    {
+        Resolve(stmt.Expr);
+        return null;
+    }
+
+    public object? VisitStmtReturn(Stmt.Return stmt)
+    {
+        if (_currentFunction == FunctionType.None)
+            Hex.Error(stmt.Keyword, "Can't return from top-level code.");
+        
+        if (stmt.Value != null)
+            Resolve(stmt.Value);
+        return null;
+    }
+
+    public object? VisitStmtVar(Stmt.Var stmt)
+    {
+        Declare(stmt.Name);
+        if (stmt.Initializer != null)
+            Resolve(stmt.Initializer);
+        Define(stmt.Name);
+        return null;
+    }
+
+    private void Declare(Token name)
+    {
+        if (_scopes.Count == 0)
+            return;
+
+        Dictionary<string, bool> scope = _scopes.Peek();
+        
+        if (scope.ContainsKey(name.Lexeme))
+            Hex.Error(name, "There already exists a variable with this name in this scope.");
+        
+        scope[name.Lexeme] = false;
+    }
+
+    private void Define(Token name)
+    {
+        if (_scopes.Count == 0)
+            return;
+
+        _scopes.Peek()[name.Lexeme] = true;
+    }
+
+    public object? VisitStmtWhile(Stmt.While stmt)
+    {
+        Resolve(stmt.Condition);
+        Resolve(stmt.Body);
+        return null;
+    }
+
+    private void BeginScope()
+    {
+        _scopes.Push(new Dictionary<string, bool>());
+    }
+
+    private void EndScope()
+    {
+        _scopes.Pop();
+    }
+    
+    internal void Resolve(List<Stmt> statements)
+    {
+        foreach (Stmt statement in statements)
+            Resolve(statement);
+    }
+
+    private void Resolve(Stmt stmt)
+    {
+        stmt.Accept(this);
+    }
+
+    private void Resolve(Expr expr)
+    {
+        expr.Accept(this);
+    }
+
+    private enum FunctionType
+    {
+        None, Function
+    }
+}

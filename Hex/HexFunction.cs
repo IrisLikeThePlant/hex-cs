@@ -13,14 +13,14 @@ internal class HexFunction : ICallable
     
     public int Arity()
     {
-        return _declaration.Parameters.Count();
+        return _declaration.Parameters.Count;
     }
 
     public object? Call(Interpreter interpreter, List<object?> arguments)
     {
         Environment environment = new Environment(_closure);
 
-        for (int i = 0; i < _declaration.Parameters.Count(); i++)
+        for (int i = 0; i < _declaration.Parameters.Count; i++)
         {
             environment.Define(_declaration.Parameters[i].Lexeme, arguments[i]);
         }

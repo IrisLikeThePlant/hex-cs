@@ -58,6 +58,12 @@ public class Hex
 
         if (statements == null) return;
         if (_hadError) return;
+        
+        Resolver resolver = new Resolver(Interpreter);
+        resolver.Resolve(statements);
+
+        if (_hadError) return;
+        
         Interpreter.Interpret(statements);
     }
 

@@ -31,6 +31,20 @@ public class Environment
         throw new RuntimeError(name, "Undefined variable '" + name.Lexeme + "'.");
     }
 
+    internal object? GetAt(int distance, string name)
+    {
+        Ancestor(distance)._values.TryGetValue(name, out var value);
+        return value;
+    }
+
+    private Environment Ancestor(int distance)
+    {
+        Environment environment = this;
+        for (int i = 0; i < distance; i++)
+            environment = environment.Enclosing;
+        return environment;
+    }
+
     internal void Assign(Token name, object value)
     {
         if (_values.ContainsKey(name.Lexeme))
@@ -46,5 +60,10 @@ public class Environment
         }
 
         throw new RuntimeError(name, "Undefined variable '" + name.Lexeme + "'.");
+    }
+
+    internal void AssignAt(int distance, Token name, object value)
+    {
+        Ancestor(distance)._values[name.Lexeme] = value;
     }
 }
