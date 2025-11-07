@@ -6,6 +6,7 @@ public abstract class Stmt
     internal interface IVisitor<T>
     {
         T? VisitStmtBlock(Block stmt);
+        T? VisitStmtClass(Class stmt);
         T? VisitStmtExpression(Expression stmt);
         T? VisitStmtFunction(Function stmt);
         T? VisitStmtIf(If stmt);
@@ -30,6 +31,23 @@ public abstract class Stmt
         }
 
         internal readonly List<Stmt> Statements;
+    }
+
+    public class Class : Stmt
+    {
+        internal Class(Token name, List<Stmt.Function> methods)
+        {
+            this.Name = name;
+            this.Methods = methods;
+        }
+
+        internal override T Accept<T>(IVisitor<T> visitor)
+        {
+            return visitor.VisitStmtClass(this);
+        }
+
+        internal readonly Token Name;
+        internal readonly List<Stmt.Function> Methods;
     }
 
     public class Expression : Stmt

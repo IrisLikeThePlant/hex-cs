@@ -5,6 +5,7 @@ internal class Resolver : Expr.IVisitor<Object?>, Stmt.IVisitor<Object?>
     private readonly Interpreter _interpreter;
     private readonly Stack<Dictionary<string, bool>> _scopes = new();
     private FunctionType _currentFunction = FunctionType.None;
+    private ClassType _currentClass = ClassType.None;
 
     internal Resolver(Interpreter interpreter)
     {
@@ -40,6 +41,31 @@ internal class Resolver : Expr.IVisitor<Object?>, Stmt.IVisitor<Object?>
         foreach(Expr argument in expr.Arguments)
             Resolve(argument);
 
+        return null;
+    }
+
+    public object? VisitExprGet(Expr.Get expr)
+    {
+        Resolve(expr.Obj);
+        return null;
+    }
+
+    public object? VisitExprSet(Expr.Set expr)
+    {
+        Resolve(expr.Value);
+        Resolve(expr.Obj);
+        return null;
+    }
+
+    public object? VisitExprThis(Expr.This expr)
+    {
+        if (_currentClass == ClassType.None)
+        {
+            Hex.Error(expr.Keyword, "Can't use 'this' outside of a class.");
+            return null;
+        }
+        
+        ResolveLocal(expr, expr.Keyword);
         return null;
     }
 
@@ -97,6 +123,32 @@ internal class Resolver : Expr.IVisitor<Object?>, Stmt.IVisitor<Object?>
         return null;
     }
 
+    public object? VisitStmtClass(Stmt.Class stmt)
+    {
+        ClassType enclosingClass = _currentClass;
+        _currentClass = ClassType.Class;
+        
+        Declare(stmt.Name);
+        Define(stmt.Name);
+        
+        BeginScope();
+        _scopes.Peek()["this"] = true;
+
+        foreach (var method in stmt.Methods)
+        {
+            FunctionType declaration = FunctionType.Method;
+            if (method.Name.Lexeme.Equals("this"))
+                declaration = FunctionType.Initializer;
+            
+            ResolveFunction(method, declaration);
+        }
+        
+        EndScope();
+
+        _currentClass = enclosingClass;
+        return null;
+    }
+
     public object? VisitStmtExpression(Stmt.Expression stmt)
     {
         Resolve(stmt.Expr);
@@ -147,9 +199,14 @@ internal class Resolver : Expr.IVisitor<Object?>, Stmt.IVisitor<Object?>
     {
         if (_currentFunction == FunctionType.None)
             Hex.Error(stmt.Keyword, "Can't return from top-level code.");
-        
+
         if (stmt.Value != null)
+        {
+            if (_currentFunction == FunctionType.Initializer)
+                Hex.Error(stmt.Keyword, "Can't return a value from an initializer.");
+            
             Resolve(stmt.Value);
+        }
         return null;
     }
 
@@ -218,6 +275,11 @@ internal class Resolver : Expr.IVisitor<Object?>, Stmt.IVisitor<Object?>
 
     private enum FunctionType
     {
-        None, Function
+        None, Function, Initializer, Method
+    }
+
+    private enum ClassType
+    {
+        None, Class
     }
 }

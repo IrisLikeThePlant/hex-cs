@@ -33,6 +33,22 @@ internal class Interpreter : Expr.IVisitor<object>, Stmt.IVisitor<object>
         return null;
     }
 
+    public object? VisitStmtClass(Stmt.Class stmt)
+    {
+        _environment.Define(stmt.Name.Lexeme, null);
+
+        Dictionary<string, HexFunction> methods = new();
+        foreach (var method in stmt.Methods)
+        {
+            HexFunction function = new HexFunction(method, _environment, method.Name.Lexeme.Equals("init"));
+            methods[method.Name.Lexeme] = function;
+        }
+        
+        HexClass klass = new HexClass(stmt.Name.Lexeme, methods);
+        _environment.Assign(stmt.Name, klass);
+        return null;
+    }
+
     public object? VisitStmtExpression(Stmt.Expression stmt)
     {
         Evaluate(stmt.Expr);
@@ -67,7 +83,7 @@ internal class Interpreter : Expr.IVisitor<object>, Stmt.IVisitor<object>
     
     public object? VisitStmtFunction(Stmt.Function stmt)
     {
-        HexFunction function = new HexFunction(stmt, _environment);
+        HexFunction function = new HexFunction(stmt, _environment, false);
         _environment.Define(stmt.Name.Lexeme, function);
         return null;
     }
@@ -108,6 +124,33 @@ internal class Interpreter : Expr.IVisitor<object>, Stmt.IVisitor<object>
                 "Expected " + function.Arity() + " arguments but got " + arguments.Count + ".");
         
         return function.Call(this, arguments);
+    }
+
+    public object? VisitExprGet(Expr.Get expr)
+    {
+        var obj = Evaluate(expr.Obj);
+
+        if (obj is HexInstance)
+            return ((HexInstance)obj).Get(expr.Name);
+
+        throw new RuntimeError(expr.Name, "Only instances of classes have properties.");
+    }
+
+    public object? VisitExprSet(Expr.Set expr)
+    {
+        var obj = Evaluate(expr.Obj);
+
+        if (obj is not HexInstance)
+            throw new RuntimeError(expr.Name, "Only instances of classes have fields");
+
+        var value = Evaluate(expr.Value);
+        ((HexInstance)obj).Set(expr.Name, value);
+        return value;
+    }
+
+    public object? VisitExprThis(Expr.This expr)
+    {
+        return LookUpVariable(expr.Keyword, expr);
     }
 
     public object? VisitExprVariable(Expr.Variable expr)

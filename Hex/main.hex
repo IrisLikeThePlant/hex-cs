@@ -1,4 +1,18 @@
-﻿spell fib(n)
+﻿grimoire Cake
+{
+    spell taste()
+    {
+        rune adjective = "delicious";
+        summon "The " + this.flavor + " cake is " + adjective + "!";
+    }
+}
+
+rune cake = Cake();
+cake.flavor = "German chocolate";
+cake.taste();
+
+/*
+spell fib(n)
 {
     if (n <= 1) cast n;
     cast fib(n - 2) + fib(n - 1);
@@ -8,3 +22,4 @@ for (rune i = 0; i <= 20; i = i + 1)
 {
     summon fib(i);
 }
+*/

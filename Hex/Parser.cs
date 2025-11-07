@@ -29,6 +29,8 @@ internal class Parser
         {
             if (Match(TokenType.Var))
                 return VarDeclaration();
+            if (Match(TokenType.Class))
+                return ClassDeclaration();
             if (Match(TokenType.Fun))
                 return Function("function");
 
@@ -39,6 +41,22 @@ internal class Parser
             Synchronize();
             return null;
         }
+    }
+
+    private Stmt ClassDeclaration()
+    {
+        Token name = ConsumeIfMatch(TokenType.Identifier, "Expect class name.");
+        ConsumeIfMatch(TokenType.LeftBrace, "Expect '{' before class body.");
+
+        List<Stmt.Function> methods = [];
+        while (!Check(TokenType.RightBrace) && !IsAtEnd())
+        {
+            ConsumeIfMatch(TokenType.Fun, "Expect spell keyword.");
+            methods.Add(Function("method"));
+        }
+
+        ConsumeIfMatch(TokenType.RightBrace, "Expect '}' after class body.");
+        return new Stmt.Class(name, methods);
     }
 
     private Stmt.Function Function(string kind)
@@ -216,10 +234,9 @@ internal class Parser
             Expr value = Assignment();
 
             if (expr is Expr.Variable varExpr)
-            {
-                Token name = varExpr.Name;
-                return new Expr.Assign(name, value);
-            }
+                return new Expr.Assign(varExpr.Name, value);
+            if (expr is Expr.Get getVar)
+                return new Expr.Set(getVar.Obj, getVar.Name, value);
 
             Error(equals, "Invalid assignment target.");
         }
@@ -362,6 +379,11 @@ internal class Parser
         {
             if (Match(TokenType.LeftParen))
                 expr = FinishCall(expr);
+            else if (Match(TokenType.Dot))
+            {
+                Token name = ConsumeIfMatch(TokenType.Identifier, "Expect property name after '.'.");
+                expr = new Expr.Get(expr, name);
+            }
             else
                 break;
         }
@@ -393,6 +415,7 @@ internal class Parser
         if (Match(TokenType.True)) return new Expr.Literal(true);
         if (Match(TokenType.Nil)) return new Expr.Literal(null);
         if (Match(TokenType.Number, TokenType.String)) return new Expr.Literal(Previous().Literal);
+        if (Match(TokenType.This)) return new Expr.This(Previous());
         if (Match(TokenType.Identifier)) return new Expr.Variable(Previous());
         if (Match(TokenType.LeftParen))
         {

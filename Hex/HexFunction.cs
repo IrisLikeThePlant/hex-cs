@@ -4,11 +4,13 @@ internal class HexFunction : ICallable
 {
     private readonly Stmt.Function _declaration;
     private readonly Environment _closure;
+    private readonly bool _isInitializer;
 
-    internal HexFunction(Stmt.Function declaration, Environment closure)
+    internal HexFunction(Stmt.Function declaration, Environment closure, bool isInitializer)
     {
         _declaration = declaration;
         _closure = closure;
+        _isInitializer = isInitializer;
     }
     
     public int Arity()
@@ -31,9 +33,19 @@ internal class HexFunction : ICallable
         }
         catch (Return returnValue)
         {
+            if (_isInitializer) return _closure.GetAt(0, "this");
             return returnValue.Value;
         }
+
+        if (_isInitializer) return _closure.GetAt(0, "this");
         return null;
+    }
+
+    public HexFunction Bind(HexInstance instance)
+    {
+        Environment environment = new Environment(_closure);
+        environment.Define("this", instance);
+        return new HexFunction(_declaration, environment, _isInitializer);
     }
     
     public override string ToString()

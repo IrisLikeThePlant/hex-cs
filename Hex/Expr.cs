@@ -9,9 +9,12 @@ public abstract class Expr
         T? VisitExprTernary(Ternary expr);
         T? VisitExprBinary(Binary expr);
         T? VisitExprCall(Call expr);
+        T? VisitExprGet(Get expr);
         T? VisitExprGrouping(Grouping expr);
         T? VisitExprLiteral(Literal expr);
         T? VisitExprLogical(Logical expr);
+        T? VisitExprSet(Set expr);
+        T? VisitExprThis(This expr);
         T? VisitExprUnary(Unary expr);
         T? VisitExprVariable(Variable expr);
     }
@@ -92,6 +95,23 @@ public abstract class Expr
         internal readonly List<Expr> Arguments;
     }
 
+    public class Get : Expr
+    {
+        internal Get(Expr obj, Token name)
+        {
+            this.Obj = obj;
+            this.Name = name;
+        }
+
+        internal override T Accept<T>(IVisitor<T> visitor)
+        {
+            return visitor.VisitExprGet(this);
+        }
+
+        internal readonly Expr Obj;
+        internal readonly Token Name;
+    }
+
     public class Grouping : Expr
     {
         internal Grouping(Expr expression)
@@ -139,6 +159,40 @@ public abstract class Expr
         internal readonly Expr Lhs;
         internal readonly Token OperatorToken;
         internal readonly Expr Rhs;
+    }
+
+    public class Set : Expr
+    {
+        internal Set(Expr obj, Token name, Expr value)
+        {
+            this.Obj = obj;
+            this.Name = name;
+            this.Value = value;
+        }
+
+        internal override T Accept<T>(IVisitor<T> visitor)
+        {
+            return visitor.VisitExprSet(this);
+        }
+
+        internal readonly Expr Obj;
+        internal readonly Token Name;
+        internal readonly Expr Value;
+    }
+
+    public class This : Expr
+    {
+        internal This(Token keyword)
+        {
+            this.Keyword = keyword;
+        }
+
+        internal override T Accept<T>(IVisitor<T> visitor)
+        {
+            return visitor.VisitExprThis(this);
+        }
+
+        internal readonly Token Keyword;
     }
 
     public class Unary : Expr
