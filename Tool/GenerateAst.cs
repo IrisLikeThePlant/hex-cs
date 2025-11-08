@@ -22,13 +22,14 @@ public class GenerateAst
             "Literal  : Object value",
             "Logical  : Expr lhs, Token operatorToken, Expr rhs",
             "Set      : Expr obj, Token name, Expr value",
+            "Super    : Token keyword, Token method", 
             "This     : Token keyword",
             "Unary    : Token operatorToken, Expr rhs",
             "Variable : Token name"
         ]);
         DefineAst(outputDir, "Stmt", [
             "Block      : List<Stmt> statements",
-            "Class      : Token name, List<Stmt.Function> methods",
+            "Class      : Token name, Expr.Variable? superClass, List<Stmt.Function> methods",
             "Expression : Expr expr",
             "Function   : Token name, List<Token> parameters, List<Stmt> body",
             "If         : Expr condition, Stmt thenBranch, Stmt elseBranch",

@@ -35,7 +35,21 @@ internal class Interpreter : Expr.IVisitor<object>, Stmt.IVisitor<object>
 
     public object? VisitStmtClass(Stmt.Class stmt)
     {
+        object? superClass = null;
+        if (stmt.SuperClass != null)
+        {
+            superClass = Evaluate(stmt.SuperClass);
+            if (superClass is not HexClass)
+                throw new RuntimeError(stmt.SuperClass.Name, "Superclass must be a class.");
+        }
+        
         _environment.Define(stmt.Name.Lexeme, null);
+
+        if (stmt.SuperClass != null)
+        {
+            _environment = new Environment(_environment);
+            _environment.Define("matron", superClass);
+        }
 
         Dictionary<string, HexFunction> methods = new();
         foreach (var method in stmt.Methods)
@@ -44,7 +58,13 @@ internal class Interpreter : Expr.IVisitor<object>, Stmt.IVisitor<object>
             methods[method.Name.Lexeme] = function;
         }
         
-        HexClass klass = new HexClass(stmt.Name.Lexeme, methods);
+        HexClass klass = new HexClass(stmt.Name.Lexeme, (HexClass)superClass, methods);
+
+        if (superClass != null)
+        {
+            _environment = _environment.Enclosing;
+        }
+        
         _environment.Assign(stmt.Name, klass);
         return null;
     }
@@ -146,6 +166,23 @@ internal class Interpreter : Expr.IVisitor<object>, Stmt.IVisitor<object>
         var value = Evaluate(expr.Value);
         ((HexInstance)obj).Set(expr.Name, value);
         return value;
+    }
+
+    public object? VisitExprSuper(Expr.Super expr)
+    {
+        if (_locals.TryGetValue(expr, out int distance))
+        {
+            HexClass superClass = (HexClass)_environment.GetAt(distance, "matron");
+            HexInstance thisObject = (HexInstance)_environment.GetAt(distance - 1, "this");
+            HexFunction? method = superClass.FindMethod(expr.Method.Lexeme);
+
+            if (method == null)
+                throw new RuntimeError(expr.Method, "Undefined property '" + expr.Method.Lexeme + "'.");
+            
+            return method.Bind(thisObject);
+        }
+
+        return null;
     }
 
     public object? VisitExprThis(Expr.This expr)

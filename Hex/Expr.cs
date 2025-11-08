@@ -14,6 +14,7 @@ public abstract class Expr
         T? VisitExprLiteral(Literal expr);
         T? VisitExprLogical(Logical expr);
         T? VisitExprSet(Set expr);
+        T? VisitExprSuper(Super expr);
         T? VisitExprThis(This expr);
         T? VisitExprUnary(Unary expr);
         T? VisitExprVariable(Variable expr);
@@ -178,6 +179,23 @@ public abstract class Expr
         internal readonly Expr Obj;
         internal readonly Token Name;
         internal readonly Expr Value;
+    }
+
+    public class Super : Expr
+    {
+        internal Super(Token keyword, Token method)
+        {
+            this.Keyword = keyword;
+            this.Method = method;
+        }
+
+        internal override T Accept<T>(IVisitor<T> visitor)
+        {
+            return visitor.VisitExprSuper(this);
+        }
+
+        internal readonly Token Keyword;
+        internal readonly Token Method;
     }
 
     public class This : Expr

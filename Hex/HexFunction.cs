@@ -8,9 +8,9 @@ internal class HexFunction : ICallable
 
     internal HexFunction(Stmt.Function declaration, Environment closure, bool isInitializer)
     {
-        _declaration = declaration;
-        _closure = closure;
-        _isInitializer = isInitializer;
+        this._declaration = declaration;
+        this._closure = closure;
+        this._isInitializer = isInitializer;
     }
     
     public int Arity()

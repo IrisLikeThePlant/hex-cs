@@ -46,6 +46,14 @@ internal class Parser
     private Stmt ClassDeclaration()
     {
         Token name = ConsumeIfMatch(TokenType.Identifier, "Expect class name.");
+
+        Expr.Variable? superClass = null;
+        if (Match(TokenType.Less))
+        {
+            ConsumeIfMatch(TokenType.Identifier, "Expect superclass name.");
+            superClass = new Expr.Variable(Previous());
+        }
+        
         ConsumeIfMatch(TokenType.LeftBrace, "Expect '{' before class body.");
 
         List<Stmt.Function> methods = [];
@@ -56,7 +64,7 @@ internal class Parser
         }
 
         ConsumeIfMatch(TokenType.RightBrace, "Expect '}' after class body.");
-        return new Stmt.Class(name, methods);
+        return new Stmt.Class(name, superClass, methods);
     }
 
     private Stmt.Function Function(string kind)
@@ -415,6 +423,13 @@ internal class Parser
         if (Match(TokenType.True)) return new Expr.Literal(true);
         if (Match(TokenType.Nil)) return new Expr.Literal(null);
         if (Match(TokenType.Number, TokenType.String)) return new Expr.Literal(Previous().Literal);
+        if (Match(TokenType.Super))
+        {
+            Token keyword = Previous();
+            ConsumeIfMatch(TokenType.Dot, "Expect '.' after 'super'");
+            Token method = ConsumeIfMatch(TokenType.Identifier, "Expect superclass method name.");
+            return new Expr.Super(keyword, method);
+        }
         if (Match(TokenType.This)) return new Expr.This(Previous());
         if (Match(TokenType.Identifier)) return new Expr.Variable(Previous());
         if (Match(TokenType.LeftParen))

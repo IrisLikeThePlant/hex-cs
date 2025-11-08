@@ -57,6 +57,17 @@ internal class Resolver : Expr.IVisitor<Object?>, Stmt.IVisitor<Object?>
         return null;
     }
 
+    public object? VisitExprSuper(Expr.Super expr)
+    {
+        if (_currentClass == ClassType.None)
+            Hex.Error(expr.Keyword, "Can't use 'matron' outside of a class.");
+        else if (_currentClass != ClassType.Subclass)
+            Hex.Error(expr.Keyword, "Can't use 'matron' in a class with no superclass.");
+        
+        ResolveLocal(expr, expr.Keyword);
+        return null;
+    }
+
     public object? VisitExprThis(Expr.This expr)
     {
         if (_currentClass == ClassType.None)
@@ -131,6 +142,21 @@ internal class Resolver : Expr.IVisitor<Object?>, Stmt.IVisitor<Object?>
         Declare(stmt.Name);
         Define(stmt.Name);
         
+        if (stmt.SuperClass != null && stmt.Name.Lexeme.Equals(stmt.SuperClass.Name.Lexeme))
+            Hex.Error(stmt.SuperClass.Name, "A class can't inherit from itself.");
+        
+        if (stmt.SuperClass != null)
+        {
+            _currentClass = ClassType.Subclass;
+            Resolve(stmt.SuperClass);
+        }
+
+        if (stmt.SuperClass != null)
+        {
+            BeginScope();
+            _scopes.Peek()["matron"] = true;
+        }
+        
         BeginScope();
         _scopes.Peek()["this"] = true;
 
@@ -144,6 +170,9 @@ internal class Resolver : Expr.IVisitor<Object?>, Stmt.IVisitor<Object?>
         }
         
         EndScope();
+        
+        if (stmt.SuperClass != null)
+            EndScope();
 
         _currentClass = enclosingClass;
         return null;
@@ -268,7 +297,7 @@ internal class Resolver : Expr.IVisitor<Object?>, Stmt.IVisitor<Object?>
         stmt.Accept(this);
     }
 
-    private void Resolve(Expr expr)
+private void Resolve(Expr expr)
     {
         expr.Accept(this);
     }
@@ -280,6 +309,6 @@ internal class Resolver : Expr.IVisitor<Object?>, Stmt.IVisitor<Object?>
 
     private enum ClassType
     {
-        None, Class
+        None, Class, Subclass
     }
 }

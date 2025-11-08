@@ -35,9 +35,10 @@ public abstract class Stmt
 
     public class Class : Stmt
     {
-        internal Class(Token name, List<Stmt.Function> methods)
+        internal Class(Token name, Expr.Variable? superClass, List<Stmt.Function> methods)
         {
             this.Name = name;
+            this.SuperClass = superClass;
             this.Methods = methods;
         }
 
@@ -47,6 +48,7 @@ public abstract class Stmt
         }
 
         internal readonly Token Name;
+        internal readonly Expr.Variable? SuperClass;
         internal readonly List<Stmt.Function> Methods;
     }
 
